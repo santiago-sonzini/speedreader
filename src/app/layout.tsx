@@ -6,7 +6,7 @@ import { type Metadata } from "next";
 import NextTopLoader from 'nextjs-toploader';
 
 export const metadata: Metadata = {
-  title: "Template",
+  title: "Speed Reader",
   icons: [{ rel: "icon", url: "/favicon.ico" }],
 };
 
