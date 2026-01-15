@@ -9,7 +9,7 @@ import { useState, useEffect, useCallback } from 'react';
 export default function Home() {
   const [text, setText] = useState('');
   const [words, setWords] = useState<string[]>([]);
-  const [wpm, setWpm] = useState(250);
+  const [wpm, setWpm] = useState(500);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
