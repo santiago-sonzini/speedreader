@@ -6,10 +6,10 @@ import { type Metadata } from "next";
 import NextTopLoader from 'nextjs-toploader';
 
 export const metadata: Metadata = {
-  title: "Delta",
-  description: "Minimalist productivity",
+  title: "Delta Habits",
+  description: "Minimalist habits app",
 
-  applicationName: "Delta",
+  applicationName: "Delta Habits",
   manifest: "/manifest.json",
 
   

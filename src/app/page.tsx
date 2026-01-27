@@ -1,182 +1,148 @@
 'use client';
 
 import Header from '@/components/layout/header';
-import Controls from '@/components/reader/controls';
-import Reader from '@/components/reader/reader';
-import TextInput from '@/components/reader/text-input';
-import { useState, useEffect, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 
 export default function Home() {
-  const [text, setText] = useState('');
-  const [words, setWords] = useState<string[]>([]);
-  const [wpm, setWpm] = useState(500);
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [elapsedSeconds, setElapsedSeconds] = useState(0);
-  const [showInput, setShowInput] = useState(true);
-
-  // Calcular duración total en segundos
-  const totalSeconds =
-    words.length > 0 ? (words.length * (60000 / wpm)) / 1000 : 0;
-
-  // Procesar texto en palabras cuando cambia
-  useEffect(() => {
-    if (text.trim()) {
-      const wordArray = text
-        .trim()
-        .split(/\s+/)
-        .filter((word) => word.length > 0);
-
-      setWords(wordArray);
-      setCurrentIndex(0);
-      setElapsedSeconds(0);
-    } else {
-      setWords([]);
-      setCurrentIndex(0);
-      setElapsedSeconds(0);
-    }
-  }, [text]);
-
-  // Control del reproductor
-  useEffect(() => {
-    if (!isPlaying || words.length === 0) return;
-
-    const msPerWord = 60000 / wpm;
-
-    const wordInterval = setInterval(() => {
-      setCurrentIndex((prev) => {
-        if (prev >= words.length - 1) {
-          setIsPlaying(false);
-          return prev;
-        }
-        return prev + 1;
-      });
-    }, msPerWord);
-
-    // Actualizar tiempo transcurrido cada 100ms
-    const timeInterval = setInterval(() => {
-      setElapsedSeconds((prev) => {
-        const newTime = prev + 0.1;
-        if (newTime >= totalSeconds) return totalSeconds;
-        return newTime;
-      });
-    }, 100);
-
-    return () => {
-      clearInterval(wordInterval);
-      clearInterval(timeInterval);
-    };
-  }, [isPlaying, wpm, words.length, totalSeconds]);
-
-  const handlePlay = useCallback(() => {
-    if (words.length === 0) return;
-
-    if (currentIndex >= words.length - 1) {
-      setCurrentIndex(0);
-      setElapsedSeconds(0);
-    }
-
-    setIsPlaying(true);
-  }, [words.length, currentIndex]);
-
-  const handlePause = useCallback(() => {
-    setIsPlaying(false);
-  }, []);
-
-  const handleTogglePlayPause = useCallback(() => {
-    if (words.length === 0) return;
-
-    if (isPlaying) {
-      handlePause();
-    } else {
-      handlePlay();
-    }
-  }, [isPlaying, words.length, handlePlay, handlePause]);
-
-  // Listener para tecla espacio
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.code === 'Space' && e.target === document.body) {
-        e.preventDefault();
-        handleTogglePlayPause();
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [handleTogglePlayPause]);
-
-  const handleClear = useCallback(() => {
-    setText('');
-    setIsPlaying(false);
-    setCurrentIndex(0);
-    setElapsedSeconds(0);
-    setShowInput(true);
-  }, []);
-
-  const getStatus = () => {
-    if (
-      currentIndex >= words.length - 1 &&
-      words.length > 0 &&
-      !isPlaying &&
-      elapsedSeconds >= totalSeconds
-    ) {
-      return 'Finished';
-    }
-    return isPlaying ? 'Playing' : 'Paused';
-  };
+  const router = useRouter();
+  const [hovered, setHovered] = useState<'reader' | 'habits' | null>(null);
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-black text-gray-900 dark:text-gray-100 flex flex-col">
+    <main className="h-screen w-screen bg-white dark:bg-black text-gray-900 dark:text-gray-100 font-mono">
       {/* Header */}
-      <Header />
+     < Header/>
 
-      {/* Main Content */}
-      <main className="flex-1 container mt-10 mx-auto px-6 py-8 max-w-4xl">
-        <div className="space-y-6">
-          {/* Text Input Section */}
-          {showInput && (
-            <TextInput
-              text={text}
-              setText={setText}
-              onClear={handleClear}
-              totalSeconds={totalSeconds}
-              wpm={wpm}
-            />
-          )}
+      {/* Split Screen */}
+      <div className="h-full flex">
+        {/* SPEED */}
+        <Panel
+          title="Speed Reader"
+          subtitle="Cognitive Throughput System"
+          description="Optimize reading velocity. Control time, perception, and processing bandwidth."
+          action="ENTER SPEED MODE"
+          active={hovered === 'reader'}
+          inactive={hovered === 'habits'}
+          onHover={() => setHovered('reader')}
+          onLeave={() => setHovered(null)}
+          onClick={() => router.push('/reader')}
+          align="left"
+        />
 
-          {/* Reader Display */}
-          <Reader
-            currentWord={words[currentIndex] || ''}
-            isActive={words.length > 0}
-            onTogglePlayPause={handleTogglePlayPause}
-          />
+        {/* HABITS */}
+        <Panel
+          title="Habits"
+          subtitle="Behavior Consistency Engine"
+          description="Track discipline patterns. Visualize momentum. Compare performance vectors."
+          action="ENTER HABIT MODE"
+          active={hovered === 'habits'}
+          inactive={hovered === 'reader'}
+          onHover={() => setHovered('habits')}
+          onLeave={() => setHovered(null)}
+          onClick={() => router.push('/habits')}
+          align="right"
+        />
+      </div>
+    </main>
+  );
+}
 
-          {/* Controls */}
-          <Controls
-            wpm={wpm}
-            setWpm={setWpm}
-            isPlaying={isPlaying}
-            onPlay={handlePlay}
-            onPause={handlePause}
-            status={getStatus()}
-            currentIndex={currentIndex}
-            totalWords={words.length}
-            elapsedSeconds={elapsedSeconds}
-            totalSeconds={totalSeconds}
-            disabled={words.length === 0}
-            showInput={showInput}
-            onToggleInput={() => setShowInput(!showInput)}
-          />
-        </div>
-      </main>
+interface PanelProps {
+  title: string;
+  subtitle: string;
+  description: string;
+  action: string;
+  active: boolean;
+  inactive: boolean;
+  align: 'left' | 'right';
+  onHover: () => void;
+  onLeave: () => void;
+  onClick: () => void;
+}
 
-      {/* Footer */}
-      <footer className="bg-white dark:bg-black border-t border-gray-300 dark:border-gray-700 px-6 py-4">
-        <p className="text-sm font-mono text-gray-500 dark:text-gray-400 text-center">
-          Paste text, set speed, and read word by word • Press SPACE to play/pause
+function Panel({
+  title,
+  subtitle,
+  description,
+  action,
+  active,
+  inactive,
+  align,
+  onHover,
+  onLeave,
+  onClick,
+}: PanelProps) {
+  return (
+    <div
+      onMouseEnter={onHover}
+      onMouseLeave={onLeave}
+      onClick={onClick}
+      className={`
+        relative flex flex-col justify-center cursor-pointer transition-all duration-500
+        border-gray-300 dark:border-gray-700
+        ${align === 'left' ? 'border-r' : 'border-l'}
+        ${active ? 'flex-[1.2]' : 'flex-1'}
+        ${inactive ? 'opacity-100' : 'opacity-100'}
+        ${active
+          ? 'bg-gray-900 text-white dark:bg-gray-900 dark:text-white'
+          : 'bg-gray-900 text-white dark:bg-black dark:text-gray-100'}
+      `}
+    >
+      {/* Grid Overlay */}
+      <div
+        className="absolute inset-0 pointer-events-none opacity-10"
+        style={{
+          backgroundImage:
+            'linear-gradient(to right, #999 1px, transparent 1px), linear-gradient(to bottom, #999 1px, transparent 1px)',
+          backgroundSize: '40px 40px',
+        }}
+      />
+
+      {/* Content */}
+      <div className="relative px-12 space-y-6 max-w-xl">
+        <p className="text-xs uppercase tracking-widest text-gray-500 dark:text-gray-400">
+          {subtitle}
         </p>
-      </footer>
+
+        <h2 className="text-4xl uppercase tracking-tight">
+          {title}
+        </h2>
+
+        <div
+          className={`
+            transition-all duration-500 overflow-hidden
+            ${active ? 'max-h-40 opacity-100' : 'max-h-0 opacity-0'}
+          `}
+        >
+          <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed mt-4">
+            {description}
+          </p>
+        </div>
+
+        {/* Action Bar */}
+        <div
+          className={`
+            mt-8 inline-block border border-gray-900 dark:border-gray-100 px-6 py-3 text-xs uppercase tracking-widest
+            transition-all duration-300
+            ${active
+              ? 'bg-gray-900 dark:bg-gray-100 text-white dark:text-black'
+              : 'bg-transparent'}
+          `}
+        >
+          {action}
+        </div>
+      </div>
+
+      {/* Edge Indicator */}
+      <div
+        className={`
+          absolute top-0 ${align === 'left' ? 'right-0' : 'left-0'}
+          h-full w-1 transition-all duration-300
+          ${active
+            ? 'bg-gray-900 dark:bg-gray-100'
+            : 'bg-gray-300 dark:bg-gray-700'}
+        `}
+      />
     </div>
   );
 }
