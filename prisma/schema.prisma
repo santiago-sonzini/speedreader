@@ -11,11 +11,82 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
-model Post {
-    id        Int      @id @default(autoincrement())
-    name      String
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt
 
-    @@index([name])
+model User {
+  id           String   @id @default(cuid())
+  username     String   @unique
+  displayName String
+  avatarUrl   String?
+
+  habits       Habit[]
+  habitEntries HabitEntry[]
+
+  // Relaciones de amistad
+  friends     Friendship[] @relation("UserFriends")
+  friendedBy Friendship[] @relation("UserFriendedBy")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([username])
 }
+
+model Habit {
+  id          String @id @default(cuid())
+  name        String
+  description String?
+  color       String?
+  icon        String?
+
+  goalPerDay Int?   // ej: 1 = completar una vez, 3 = tres veces
+  isActive   Boolean @default(true)
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  entries HabitEntry[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+}
+
+model HabitEntry {
+  id       String   @id @default(cuid())
+  date     DateTime
+
+  completed Boolean @default(false)
+  progress  Int?
+  note      String?
+
+  habitId String
+  habit   Habit @relation(fields: [habitId], references: [id], onDelete: Cascade)
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  // Evita duplicados del mismo hábito en el mismo día para un usuario
+  @@unique([userId, habitId, date])
+  @@index([date])
+}
+
+model Friendship {
+  id String @id @default(cuid())
+
+  userId   String
+  friendId String
+
+  user   User @relation("UserFriends", fields: [userId], references: [id], onDelete: Cascade)
+  friend User @relation("UserFriendedBy", fields: [friendId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  // Evita amigos duplicados
+  @@unique([userId, friendId])
+  @@index([userId])
+  @@index([friendId])
+}
+
